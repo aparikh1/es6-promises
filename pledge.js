@@ -20,11 +20,24 @@ $Promise.prototype.then = function (successCb, errorCb) {
 	if (this.state === 'resolved')
 		this.callHandlers(successCb, errorCb);
 
+	if (this.state === 'rejected')
+		this.callHandlers(null, errorCb);
+
 	this.handlerGroups.push({successCb: successCb, errorCb: errorCb})
 }
 
 $Promise.prototype.callHandlers = function (successCb, errorCb) {
-	successCb(this.value);
+
+	if (successCb)
+		successCb(this.value);
+
+	if (errorCb)
+		errorCb(this.value);	
+
+}
+
+$Promise.prototype.catch = function (func) {
+	this.then(null, func);
 }
 
 function Deferral () {
@@ -44,7 +57,8 @@ Deferral.prototype.resolve = function (data) {
 		promise.handlerGroups.forEach(function (obj) {
 			promise.callHandlers(obj.successCb, obj.errorCb);
 		})
-		
+
+		promise.handlerGroups = [];
 		promise.state = 'resolved';
 	}
 }
@@ -52,12 +66,18 @@ Deferral.prototype.resolve = function (data) {
 
 Deferral.prototype.reject = function (reason) {
 
+	var promise = this.$promise;
+
 	if (this.$promise.state === 'pending') 
 		this.$promise.value = reason;
 
-	if (this.$promise.state !== 'resolved')
+	if (this.$promise.state !== 'resolved') {
+		promise.handlerGroups.forEach(function (obj) {
+			promise.callHandlers(obj.successCb, obj.errorCb);
+		})
+
 		this.$promise.state = 'rejected';
-	
+	}
 }
 
 var defer = function () {
