@@ -50,7 +50,6 @@ $Promise.prototype.callHandlers = function(successCb, errorCb, forwarder) {
 					forwarder.reject(rejectedValue);
 				});
 			} else {
-			    val = successCb(this.value);
 			 	forwarder.resolve(val);
 			}
 		} catch (e) {
@@ -68,7 +67,6 @@ $Promise.prototype.callHandlers = function(successCb, errorCb, forwarder) {
 					forwarder.reject(rejectedValue);
 				});
 			} else {
-			    val = successCb(this.value);
 			 	forwarder.resolve(val);
 			}
 		} catch (e) {
