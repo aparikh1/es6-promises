@@ -11,6 +11,9 @@ function $Promise() {
 };
 
 $Promise.prototype.then = function(successCb, errorCb) {
+	
+	var forwarder = defer();
+	
 	if (typeof successCb !== 'function') {
 		successCb = null;
 	}
@@ -18,7 +21,6 @@ $Promise.prototype.then = function(successCb, errorCb) {
 		errorCb = null;
 	}
 
-	var forwarder = defer();
 	this.handlerGroups.push({successCb: successCb, errorCb: errorCb, forwarder: forwarder})
 	
 
@@ -40,8 +42,17 @@ $Promise.prototype.callHandlers = function(successCb, errorCb, forwarder) {
 
 	if (successCb && this.state === 'resolved') {
 		try {
-		    val = successCb(this.value);
-		 	forwarder.resolve(val);
+			val = successCb(this.value);
+			if (val instanceof $Promise) {
+				val.then(function (resolvedValue) {
+					forwarder.resolve(resolvedValue);
+				}, function (rejectedValue) {
+					forwarder.reject(rejectedValue);
+				});
+			} else {
+			    val = successCb(this.value);
+			 	forwarder.resolve(val);
+			}
 		} catch (e) {
 		    forwarder.reject(e);
 		}
@@ -50,7 +61,16 @@ $Promise.prototype.callHandlers = function(successCb, errorCb, forwarder) {
 	if (errorCb && this.state === 'rejected') {
 		try {
 		    val = errorCb(this.value);
-		 	forwarder.resolve(val);
+		    if (val instanceof $Promise) {
+				val.then(function (resolvedValue) {
+					forwarder.resolve(resolvedValue);
+				}, function (rejectedValue) {
+					forwarder.reject(rejectedValue);
+				});
+			} else {
+			    val = successCb(this.value);
+			 	forwarder.resolve(val);
+			}
 		} catch (e) {
 		    forwarder.reject(e);
 		}		
